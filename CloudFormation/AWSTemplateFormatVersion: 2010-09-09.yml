@@ -1,5 +1,52 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Cloud formation template for Redis
+Mappings:
+  ParametersAndSecretsLayer:
+    us-east-1:
+        ParametersAndSecrets: arn:aws:lambda:us-east-1:177933569100:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    us-east-2:
+        ParametersAndSecrets: arn:aws:lambda:us-east-2:590474943231:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    us-west-1: 
+        ParametersAndSecrets: arn:aws:lambda:us-west-1:997803712105:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    us-west-2:
+        ParametersAndSecrets: arn:aws:lambda:us-west-2:345057560386:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    af-south-1:
+        ParametersAndSecrets: arn:aws:lambda:af-south-1:317013901791:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    ap-east-1:
+        ParametersAndSecrets: arn:aws:lambda:ap-east-1:768336418462:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    ap-southeast-3:
+        ParametersAndSecrets: arn:aws:lambda:ap-southeast-3:490737872127:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    ap-south-1:
+        ParametersAndSecrets: arn:aws:lambda:ap-south-1:176022468876:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    ap-northeast-3:
+        ParametersAndSecrets: arn:aws:lambda:ap-northeast-3:576959938190:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    ap-northeast-2:
+        ParametersAndSecrets: arn:aws:lambda:ap-northeast-2:738900069198:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    ap-southeast-1:
+        ParametersAndSecrets: arn:aws:lambda:ap-southeast-1:044395824272:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    ap-southeast-2:
+        ParametersAndSecrets: arn:aws:lambda:ap-southeast-2:665172237481:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    ap-northeast-1:
+        ParametersAndSecrets: arn:aws:lambda:ap-northeast-1:133490724326:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    ca-central-1:
+        ParametersAndSecrets: arn:aws:lambda:ca-central-1:200266452380:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    eu-central-1:
+        ParametersAndSecrets: arn:aws:lambda:eu-central-1:187925254637:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    eu-west-1:
+        ParametersAndSecrets: arn:aws:lambda:eu-west-1:015030872274:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    eu-west-2:
+        ParametersAndSecrets: arn:aws:lambda:eu-west-2:133256977650:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+    eu-south-1:
+        ParametersAndSecrets: arn:aws:lambda:eu-south-1:325218067255:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    eu-west-3:
+        ParametersAndSecrets: arn:aws:lambda:eu-west-3:780235371811:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    eu-north-1:
+        ParametersAndSecrets: arn:aws:lambda:eu-north-1:427196147048:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    me-south-1:
+        ParametersAndSecrets: arn:aws:lambda:me-south-1:832021897121:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+    sa-east-1:
+        ParametersAndSecrets: arn:aws:lambda:sa-east-1:933737806257:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
+      
 Parameters:
     baseURL:
       Type: String
@@ -210,10 +257,38 @@ Conditions:
   redisVersionCondition:               !Not [!Equals [!Ref redisVersion, ""]]
 
 Resources:
+  StepFunctionsAllowLambda:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: StepFunctionsAllowLambda-${AWS::Region}-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - states.amazonaws.com
+            Action :
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: StepFunctionsAllowLambda
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: "*"
+
   MyStateMachine:
     Type: AWS::StepFunctions::StateMachine
+    DependsOn: 
+      - FlexibleSubscriptionCheckState
+      - FlexibleSubscriptionCFResponse
     Properties:
-      RoleArn: arn:aws:iam::178919255282:role/StepFunctionsIAllowLambda
+      RoleArn: !GetAtt StepFunctionsAllowLambda.Arn
       StateMachineName:
         Fn::Sub: "FlexibleSubscription-StateMachine-${AWS::Region}-${AWS::StackName}"
       DefinitionString: |-
@@ -342,6 +417,8 @@ Resources:
             Action:
             - logs:CreateLogStream
             - logs:PutLogEvents
+            - logs:PutRetentionPolicy
+            - logs:CreateLogGroup
             - states:*
             - cloudformation:*
             - secretsmanager:GetSecretValue
@@ -351,6 +428,25 @@ Resources:
             - s3:GetObjectAcl
             - s3:DeleteObject
             Resource: "*"
+
+  FlexibleSubscriptionHandlerEventInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties: 
+      FunctionName: !Ref FlexibleSubscriptionHandler
+      MaximumRetryAttempts: 0
+      Qualifier: $LATEST
+  FlexibleSubscriptionCheckStateEventInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties: 
+      FunctionName: !Ref FlexibleSubscriptionCheckState
+      MaximumRetryAttempts: 0
+      Qualifier: $LATEST
+  FlexibleSubscriptionCFResponseEventInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties: 
+      FunctionName: !Ref FlexibleSubscriptionCFResponse
+      MaximumRetryAttempts: 0
+      Qualifier: $LATEST
 
   FlexibleSubscriptionHandler:
     Type: AWS::Lambda::Function
@@ -366,17 +462,54 @@ Resources:
       Layers:
         - !Ref RequestsLayer
         - !Ref SecretsLayer
-        - arn:aws:lambda:eu-central-1:187925254637:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:4
-        - arn:aws:lambda:us-east-2:590474943231:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11
+        - !FindInMap [ParametersAndSecretsLayer, !Ref "AWS::Region", ParametersAndSecrets]
       Code:
         S3Bucket: redis-lambdas
         S3Key: FlexibleSubscription-Handler.zip
+
+  FlexibleSubscriptionCheckState:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: "FlexibleSubscription-CheckState-${AWS::Region}-${AWS::StackName}"
+      Architectures: 
+        - arm64
+      Runtime: python3.10
+      Handler: lambda_function.lambda_handler
+      Timeout: 300
+      Role: !GetAtt RedisLambdaExecutionRole.Arn
+      Layers:
+        - !Ref RequestsLayer
+        - !Ref SecretsLayer
+        - !FindInMap [ParametersAndSecretsLayer, !Ref "AWS::Region", ParametersAndSecrets]
+      Code:
+        S3Bucket: redis-lambdas
+        S3Key: FlexibleSubscription-CheckState.zip
+
+  FlexibleSubscriptionCFResponse:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: "FlexibleSubscription-CFResponse-${AWS::Region}-${AWS::StackName}"
+      Architectures: 
+        - arm64
+      Runtime: python3.10
+      Handler: lambda_function.lambda_handler
+      Timeout: 300
+      Role: !GetAtt RedisLambdaExecutionRole.Arn
+      Layers:
+        - !Ref RequestsLayer
+        - !Ref SecretsLayer
+        - !FindInMap [ParametersAndSecretsLayer, !Ref "AWS::Region", ParametersAndSecrets]
+      Code:
+        S3Bucket: redis-lambdas
+        S3Key: FlexibleSubscription-CFResponse.zip
 
   Redis:
       Type: Custom::FlexibleSubscription-Handler
       Version: "1.0"
       Properties:
-        ServiceToken: "arn:aws:lambda:eu-central-1:178919255282:function:FlexibleSubscription-Handler"
+        ServiceToken: !GetAtt FlexibleSubscriptionHandler.Arn
         baseURL:                    !Ref baseURL
         subName:                    !If [subNameCondition, !Ref subName, !Ref "AWS::NoValue"]
         dryRun:                     !If [dryRunCondition, !Ref dryRun, !Ref "AWS::NoValue"]
