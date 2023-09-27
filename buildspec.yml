@@ -18,8 +18,6 @@ phases:
       - zip FlexibleSubscription-Handler.zip Lambda/FlexibleSubscription-Handler.py
       - zip -r requests_layer.zip Layers/requests_layer
       - zip -r secrets_layer.zip Layers/secrets_layer
-  post_build:
-    commands:
       # Upload the zip archive to an S3 bucket
       - aws s3 cp FlexibleSubscription-CheckState.zip s3://redis-cicd/
       - aws s3 cp FlexibleSubscription-CFResponse.zip s3://redis-cicd/
