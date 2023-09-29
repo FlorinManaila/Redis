@@ -1,4 +1,3 @@
-#test
 version: 0.1
 
 phases:
@@ -25,4 +24,10 @@ phases:
       - aws s3 cp requests_layer.zip s3://redis-cicd/v.1.1/
       - aws s3 cp secrets_layer.zip s3://redis-cicd/v.1.1/
       - aws s3 cp CloudFormation/AWSTemplateFormatVersion:\ 2010-09-09.yml s3://redis-cicd/v.1.1/
+      - aws s3 cp FlexibleSubscription-CheckState.zip s3://redis-cicd/latest/
+      - aws s3 cp FlexibleSubscription-CFResponse.zip s3://redis-cicd/latest/
+      - aws s3 cp FlexibleSubscription-Handler.zip s3://redis-cicd/latest/
+      - aws s3 cp requests_layer.zip s3://redis-cicd/latest/
+      - aws s3 cp secrets_layer.zip s3://redis-cicd/latest/
+      - aws s3 cp CloudFormation/AWSTemplateFormatVersion:\ 2010-09-09.yml s3://redis-cicd/latest/
       
