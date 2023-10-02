@@ -48,6 +48,10 @@ Mappings:
         ParametersAndSecrets: arn:aws:lambda:sa-east-1:933737806257:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
       
 Parameters:
+    version:
+      Type: String
+      Description: "[Required]. The version of Cloud Formation template that is desired to be used. The version must be available in the S3 bucket. Default value: latest. Example: v2.3.4"
+      Default: "latest"
     baseURL:
       Type: String
       Description: "[Required]. Base URL link used to connect to API. Example: https://api-k8s-cloudapi.qa.redislabs.com."
@@ -159,10 +163,10 @@ Parameters:
       AllowedValues: 
         - number-of-shards
         - operations-per-second
-      Description: "[Required only to enable throughputMeasurement]. Throughput measurement method. Either 'number-of-shards' or 'operations-per-second'"
+      Description: "[Required]. Throughput measurement method. Either 'number-of-shards' or 'operations-per-second'"
     value:
       Type: Number
-      Description: "[Required only to enable throughputMeasurement]. Throughput value (as applies to selected measurement method). Example: 10000"
+      Description: "[Required]. Throughput value (as applies to selected measurement method). Example: 10000"
     moduleName:
       Type: String
       Description: "[Required only to enable modules]. Redis module Id"
@@ -189,6 +193,7 @@ Metadata:
     ParameterGroups:
       - 
         Parameters:
+          - version
           - baseURL
           - subName
           - dryRun
@@ -291,7 +296,7 @@ Resources:
       RoleArn: !GetAtt StepFunctionsAllowLambda.Arn
       StateMachineName:
         Fn::Sub: "FlexibleSubscription-StateMachine-${AWS::Region}-${AWS::StackName}"
-      DefinitionString: |-
+      DefinitionString: !Sub |-
         {
           "Comment": "A description of my state machine",
           "StartAt": "CheckSubscriptionStatus",
@@ -302,7 +307,7 @@ Resources:
               "OutputPath": "$.Payload",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "arn:aws:lambda:eu-central-1:178919255282:function:FlexibleSubscription-CheckState"
+                "FunctionName": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:FlexibleSubscription-CheckState-${AWS::Region}-${AWS::StackName}"
               },
               "Retry": [
                 {
@@ -338,7 +343,7 @@ Resources:
               "OutputPath": "$.Payload",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "arn:aws:lambda:eu-central-1:178919255282:function:FlexibleSubscription-CFResponse"
+                "FunctionName": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:FlexibleSubscription-CFResponse-${AWS::Region}-${AWS::StackName}"
               },
               "Retry": [
                 {
@@ -369,14 +374,21 @@ Resources:
       LayerName: RequestsLayer
       Description: RequestsLayer
       Content:
-        S3Bucket: redis-lambdas
-        S3Key: requests_layer.zip
+        S3Bucket: redis-cicd
+        S3Key:
+          Fn::Join:
+            - ""
+            - - !Ref version
+              - "/requests_layer.zip"
       CompatibleRuntimes:
         - python3.7
         - python3.8
         - python3.9
         - python3.10
         - python3.11
+      CompatibleArchitectures: 
+        - arm64
+        - x86_64
 
   SecretsLayer:
     Type: AWS::Lambda::LayerVersion
@@ -384,14 +396,21 @@ Resources:
       LayerName: SecretsLayer
       Description: SecretsLayer
       Content:
-        S3Bucket: redis-lambdas
-        S3Key: secrets_layer.zip
+        S3Bucket: redis-cicd
+        S3Key:
+          Fn::Join:
+            - ""
+            - - !Ref version
+              - "/secrets_layer.zip"
       CompatibleRuntimes:
         - python3.7
         - python3.8
         - python3.9
         - python3.10
         - python3.11
+      CompatibleArchitectures: 
+        - arm64
+        - x86_64
 
   RedisLambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -456,7 +475,7 @@ Resources:
       Architectures: 
         - arm64
       Runtime: python3.10
-      Handler: lambda_function.lambda_handler
+      Handler: FlexibleSubscription-Handler.lambda_handler
       Timeout: 300
       Role: !GetAtt RedisLambdaExecutionRole.Arn
       Layers:
@@ -464,8 +483,12 @@ Resources:
         - !Ref SecretsLayer
         - !FindInMap [ParametersAndSecretsLayer, !Ref "AWS::Region", ParametersAndSecrets]
       Code:
-        S3Bucket: redis-lambdas
-        S3Key: FlexibleSubscription-Handler.zip
+        S3Bucket: redis-cicd
+        S3Key:
+          Fn::Join:
+            - ""
+            - - !Ref version
+              - "/FlexibleSubscription-Handler.zip"
 
   FlexibleSubscriptionCheckState:
     Type: AWS::Lambda::Function
@@ -475,7 +498,7 @@ Resources:
       Architectures: 
         - arm64
       Runtime: python3.10
-      Handler: lambda_function.lambda_handler
+      Handler: FlexibleSubscription-CheckState.lambda_handler
       Timeout: 300
       Role: !GetAtt RedisLambdaExecutionRole.Arn
       Layers:
@@ -483,8 +506,12 @@ Resources:
         - !Ref SecretsLayer
         - !FindInMap [ParametersAndSecretsLayer, !Ref "AWS::Region", ParametersAndSecrets]
       Code:
-        S3Bucket: redis-lambdas
-        S3Key: FlexibleSubscription-CheckState.zip
+        S3Bucket: redis-cicd
+        S3Key:
+          Fn::Join:
+            - ""
+            - - !Ref version
+              - "/FlexibleSubscription-CheckState.zip"
 
   FlexibleSubscriptionCFResponse:
     Type: AWS::Lambda::Function
@@ -494,7 +521,7 @@ Resources:
       Architectures: 
         - arm64
       Runtime: python3.10
-      Handler: lambda_function.lambda_handler
+      Handler: FlexibleSubscription-CFResponse.lambda_handler
       Timeout: 300
       Role: !GetAtt RedisLambdaExecutionRole.Arn
       Layers:
@@ -502,14 +529,19 @@ Resources:
         - !Ref SecretsLayer
         - !FindInMap [ParametersAndSecretsLayer, !Ref "AWS::Region", ParametersAndSecrets]
       Code:
-        S3Bucket: redis-lambdas
-        S3Key: FlexibleSubscription-CFResponse.zip
+        S3Bucket: redis-cicd
+        S3Key:
+          Fn::Join:
+            - ""
+            - - !Ref version
+              - "/FlexibleSubscription-CFResponse.zip"
 
   Redis:
       Type: Custom::FlexibleSubscription-Handler
       Version: "1.0"
       Properties:
         ServiceToken: !GetAtt FlexibleSubscriptionHandler.Arn
+        version:                    !Ref version
         baseURL:                    !Ref baseURL
         subName:                    !If [subNameCondition, !Ref subName, !Ref "AWS::NoValue"]
         dryRun:                     !If [dryRunCondition, !Ref dryRun, !Ref "AWS::NoValue"]
