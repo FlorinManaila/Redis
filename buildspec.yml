@@ -11,7 +11,7 @@ phases:
       - git clone https://github.com/FlorinManaila/Redis.git
       # Change to the cloned repository directory
       - pwd
-      - cd ../../Layers
+      - cd $PWD/Layers
       - pwd
       - cd Redis
       # Upload CF template to S3
