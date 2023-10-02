@@ -25,9 +25,9 @@ phases:
       # Create a zip archive for layers and upload archives to S3
       - cd Layers/requests_layer && zip -r requests_layer.zip python
       - cd Layers/secrets_layer && zip -r secrets_layer.zip python
-      - aws s3 cp Layers/requests_layer.zip s3://redis-cicd/v.1.1/
-      - aws s3 cp Layers/secrets_layer.zip s3://redis-cicd/v.1.1/
-      - aws s3 cp Layers/requests_layer.zip s3://redis-cicd/latest/
-      - aws s3 cp Layers/secrets_layer.zip s3://redis-cicd/latest/
+      - aws s3 cp Layers/requests_layer/requests_layer.zip s3://redis-cicd/v.1.1/
+      - aws s3 cp Layers/secrets_layer/secrets_layer.zip s3://redis-cicd/v.1.1/
+      - aws s3 cp Layers/requests_layer/requests_layer.zip s3://redis-cicd/latest/
+      - aws s3 cp Layers/secrets_layer/secrets_layer.zip s3://redis-cicd/latest/
 
       
