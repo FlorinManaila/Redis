@@ -9,11 +9,6 @@ phases:
     commands:
       # Clone the GitHub repository
       - git clone https://github.com/FlorinManaila/Redis.git
-      # Change to the cloned repository directory
-      - pwd
-      - cd $PWD/Layers
-      - pwd
-      - cd Redis
       # Upload CF template to S3
       - aws s3 cp CloudFormation/AWSTemplateFormatVersion:\ 2010-09-09.yml s3://redis-cicd/v.1.1/
       - aws s3 cp CloudFormation/AWSTemplateFormatVersion:\ 2010-09-09.yml s3://redis-cicd/latest/
@@ -28,10 +23,8 @@ phases:
       - aws s3 cp FlexibleSubscription-CFResponse.zip s3://redis-cicd/v.1.1/
       - aws s3 cp FlexibleSubscription-Handler.zip s3://redis-cicd/v.1.1/
       # Create a zip archive for layers and upload archives to S3
-      - cd Redis/Layers
-      - ls
-      - zip -r requests_layer.zip requests_layer
-      - zip -r secrets_layer.zip secrets_layer
+      - cd Layers && zip -r requests_layer.zip requests_layer
+      - cd Layers && zip -r secrets_layer.zip secrets_layer
       - aws s3 cp requests_layer.zip s3://redis-cicd/v.1.1/
       - aws s3 cp secrets_layer.zip s3://redis-cicd/v.1.1/
       - aws s3 cp requests_layer.zip s3://redis-cicd/latest/
