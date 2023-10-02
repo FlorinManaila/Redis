@@ -15,10 +15,10 @@ phases:
       - git clone https://github.com/FlorinManaila/Redis.git
 
       # Extract the version number from the commit message
-      - |
-        commit_msg=$(git log -1 --pretty=format:%s)
-        version_number=$(echo "$commit_msg" | grep -oP 'v\d+\.\d+\.\d+')
-        export VERSION_NUMBER=$version_number
+      # - |
+      #   commit_msg=$(git log -1 --pretty=format:%s)
+      #   version_number=$(echo "$commit_msg" | grep -oP 'v\d+\.\d+\.\d+')
+      #   export VERSION_NUMBER=$version_number
 
       # Upload CF template to S3
       - aws s3 cp CloudFormation/RedisCloudFormationTemplate.yml s3://redis-cicd/$VERSION_NUMBER/
@@ -35,6 +35,7 @@ phases:
       - aws s3 cp FlexibleSubscription-Handler.zip s3://redis-cicd/$VERSION_NUMBER/
       # Create a zip archive for layers and upload archives to S3
       - cd Layers/requests_layer && zip -r requests_layer.zip python
+      - pwd
       - cd Layers/secrets_layer && zip -r secrets_layer.zip python
       - aws s3 cp Layers/requests_layer/requests_layer.zip s3://redis-cicd/$VERSION_NUMBER/
       - aws s3 cp Layers/secrets_layer/secrets_layer.zip s3://redis-cicd/$VERSION_NUMBER/
