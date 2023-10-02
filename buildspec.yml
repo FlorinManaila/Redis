@@ -11,6 +11,8 @@ phases:
       - git clone https://github.com/FlorinManaila/Redis.git
       # Change to the cloned repository directory
       - pwd
+      - cd ../../Layers
+      - pwd
       - cd Redis
       # Upload CF template to S3
       - aws s3 cp CloudFormation/AWSTemplateFormatVersion:\ 2010-09-09.yml s3://redis-cicd/v.1.1/
