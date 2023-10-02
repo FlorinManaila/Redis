@@ -13,6 +13,7 @@ phases:
     commands:
       # Clone the GitHub repository
       - git clone https://github.com/FlorinManaila/Redis.git
+      - sleep 10
       - git log
       - git log -1 --pretty=format:%s
       # Extract the version number from the commit message
