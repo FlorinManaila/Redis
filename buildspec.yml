@@ -15,7 +15,7 @@ phases:
       - git clone https://github.com/FlorinManaila/Redis.git
 
       # Extract the version number from the commit message
-      - >
+      - |
         commit_msg=$(git log -1 --pretty=format:%s)
         version_number=$(echo "$commit_msg" | grep -oP 'v\d+\.\d+\.\d+')
         if [ -n "$version_number" ]; then
