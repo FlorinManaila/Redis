@@ -12,27 +12,7 @@ runtime_region = os.environ['AWS_REGION']
 stepfunctions = boto3.client("stepfunctions")
 
 def lambda_handler (event, context):
-    ##############
-    #testing area#
-    ##############
 
-    # responseStatus = 'SUCCESS' #todo
-    # responseURL = event['ResponseURL']
-    # responseBody = {'Status': responseStatus,
-    #                 'PhysicalResourceId': context.log_stream_name,
-    #                 'StackId': event['StackId'],
-    #                 'RequestId': event['RequestId'],
-    #                 'LogicalResourceId': event['LogicalResourceId'],
-    #                 'Data': {
-    #                     "SubscriptionId": "some value"
-    #                     }
-    #                 }
-                    
-    # GetResponse(responseURL, responseBody)
-    
-    ##############
-    #testing area#
-    ##############
     print (event)
     aws_account_id = context.invoked_function_arn.split(":")[4]
     
@@ -134,7 +114,7 @@ def lambda_handler (event, context):
     if "redisVersion" in event['ResourceProperties']:
         callEvent["redisVersion"] = event['ResourceProperties']["redisVersion"]
 
-    print ("callEvent is bellow:")
+    print ("callEvent that is used as the actual API Call is bellow:")
     print (callEvent)
     
     global stack_name
@@ -147,7 +127,7 @@ def lambda_handler (event, context):
     stack_name = str(event['StackId'].split("/")[1])
     responseData = {}
     
-    responseStatus = 'SUCCESS' #todo
+    responseStatus = 'SUCCESS'
     responseURL = event['ResponseURL']
     responseBody = {'Status': responseStatus,
                     'PhysicalResourceId': context.log_stream_name,
@@ -157,65 +137,52 @@ def lambda_handler (event, context):
                     }
     
     if event['RequestType'] == "Create":
-        #try:
-        responseValue = PostSubscription(callEvent)
+        try:
+            responseValue = PostSubscription(callEvent)
+            print (responseValue) 
             
-            #try:        
-        sub_id, sub_description = GetSubscriptionId (responseValue['links'][0]['href'])
-        default_db_id = GetDatabaseId(sub_id)
-        print ("New sub id is: " + str(sub_id))
-        print ("Description for Subscription with id " + str(sub_id) + " is: " + str(sub_description))
-                
-                #try:
-        responseData.update({"SubscriptionId":str(sub_id), "DefaultDatabaseId":str(default_db_id), "SubscriptionDescription":str(sub_description), "PostCall":str(callEvent)})
-        responseBody.update({"Data":responseData})
-        SFinput = {}
-        SFinput["responseBody"] = responseBody
-        SFinput["responseURL"] = responseURL
-        SFinput["base_url"] = event['ResourceProperties']['baseURL']
-        response = stepfunctions.start_execution(
-            stateMachineArn = f'arn:aws:states:{runtime_region}:{aws_account_id}:stateMachine:FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
-            name = 'FlexibleSubscription-StateMachine-' + str(stack_name),
-            input = json.dumps(SFinput)
-            )
-        print (json.dumps(SFinput))
-        #GetResponse(responseURL, responseBody)
-                    
-        #         except:
-        #             responseStatus = 'FAILED'
-        #             reason = "Writing CF Outputs failed."
-        #             if responseStatus == 'FAILED':
-        #                 responseBody.update({"Status":responseStatus})
-        #                 if "Reason" in str(responseBody):
-        #                     responseBody.update({"Reason":reason})
-        #                 else:
-        #                     responseBody["Reason"] = reason
-        #                 GetResponse(responseURL, responseBody)
+            try:        
+                sub_id, sub_description = GetSubscriptionId (responseValue['links'][0]['href'])
+                default_db_id = GetDatabaseId(sub_id)
+                print ("New sub id is: " + str(sub_id))
+                print ("Description for Subscription with id " + str(sub_id) + " is: " + str(sub_description))
                         
-        #     except:
-        #         responseStatus = 'FAILED'
-        #         if sub_description:
-        #             reason = sub_description
-        #         else:
-        #             reason = "Could not retrieve Subscrion ID and Description." 
-        #         if responseStatus == 'FAILED':
-        #             responseBody.update({"Status":responseStatus})
-        #             if "Reason" in str(responseBody):
-        #                 responseBody.update({"Reason":reason})
-        #             else:
-        #                 responseBody["Reason"] = reason
-        #             GetResponse(responseURL, responseBody)
+                responseData.update({"SubscriptionId":str(sub_id), "DefaultDatabaseId":str(default_db_id), "SubscriptionDescription":str(sub_description), "PostCall":str(callEvent)})
+                responseBody.update({"Data":responseData})
+                SFinput = {}
+                SFinput["responseBody"] = responseBody
+                SFinput["responseURL"] = responseURL
+                SFinput["base_url"] = event['ResourceProperties']['baseURL']
+                response = stepfunctions.start_execution(
+                    stateMachineArn = f'arn:aws:states:{runtime_region}:{aws_account_id}:stateMachine:FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
+                    name = f'FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
+                    input = json.dumps(SFinput)
+                    )
+                print ("Output sent to Step Functions is the following:")
+                print (json.dumps(SFinput))
                             
-        # except:
-        #     responseStatus = 'FAILED'
-        #     reason = "POST API call failed due to wrong URL."
-        #     if responseStatus == 'FAILED':
-        #         responseBody.update({"Status":responseStatus})
-        #         if "Reason" in str(responseBody):
-        #             responseBody.update({"Reason":reason})
-        #         else:
-        #             responseBody["Reason"] = reason
-        #         GetResponse(responseURL, responseBody)
+            except:
+                sub_error = GetSubscriptionError (responseValue['links'][0]['href'])
+                responseStatus = 'FAILED'
+                reason = str(sub_error)
+                if responseStatus == 'FAILED':
+                    responseBody.update({"Status":responseStatus})
+                    if "Reason" in str(responseBody):
+                        responseBody.update({"Reason":reason})
+                    else:
+                        responseBody["Reason"] = reason
+                    GetResponse(responseURL, responseBody)
+                    
+        except:
+            responseStatus = 'FAILED'
+            reason = "Wrong Base URL"
+            if responseStatus == 'FAILED':
+                responseBody.update({"Status":responseStatus})
+                if "Reason" in str(responseBody):
+                    responseBody.update({"Reason":reason})
+                else:
+                    responseBody["Reason"] = reason
+                GetResponse(responseURL, responseBody)
 
     if event['RequestType'] == "Update":
         cf_sub_id, cf_event, cf_db_id, cf_sub_description = CurrentOutputs()
@@ -223,7 +190,6 @@ def lambda_handler (event, context):
         responseBody.update({"PhysicalResourceId":PhysicalResourceId})
         sub_status = GetSubscriptionStatus(cf_sub_id)
         
-        # GET subscription if status active-> OK, if pending -> try again later, if deleting -> Already deleting.
         if str(sub_status) == "active":
             responseValue = PutSubscription(cf_sub_id, callEvent)
             print ("This is the event key after PUT call:")
@@ -279,7 +245,12 @@ def lambda_handler (event, context):
     # DACA LISTA DE DB > 1 -> DACA =1 -> VERIFICA DACA E CEA DEFAULT -> DACA E DEFAULT -> DELETE ELSE FAILED AND ANNOUNCE THE ERROR. 
     # NU CAUTA SUBS SI DB ID INAINTE. Direct Delete doar daca singura baza de date arondata subscritiei este cea defaul-> if error with subs/db not found -> DELETE_COMPLETE
     if event['RequestType'] == "Delete":
-        cf_sub_id, cf_event, cf_db_id, cf_sub_description = CurrentOutputs()
+        try:
+            cf_sub_id, cf_event, cf_db_id, cf_sub_description = CurrentOutputs()
+        except:
+            responseStatus = 'SUCCESS'
+            responseBody.update({"Status":responseStatus})
+            GetResponse(responseURL, responseBody)
         all_subs = GetSubscription()
         print (all_subs)
         databases = GetAllDatabases(cf_sub_id)
@@ -314,7 +285,7 @@ def lambda_handler (event, context):
                         GetResponse(responseURL, responseBody)
             elif len(databases["subscription"][0]["databases"]) > 1:
                 responseStatus = 'FAILED'
-                reason = "Subscription " + str(cf_sub_id) + " has more than one database assigned."
+                reason = "Subscription " + str(cf_sub_id) + " has more than one database assigned. Please delete the other databases."
                 if responseStatus == 'FAILED':
                     responseBody.update({"Status":responseStatus})
                     if "Reason" in str(responseBody):
@@ -341,7 +312,7 @@ def RetrieveSecret(secret_name):
 
     secrets_extension_endpoint = "http://localhost:2773/secretsmanager/get?secretId=" + str(secret_name)
     r = requests.get(secrets_extension_endpoint, headers=headers)
-    secret = json.loads(r.text)["SecretString"] # load the Secrets Manager response into a Python dictionary, access the secret
+    secret = json.loads(r.text)["SecretString"]
     secret = json.loads(secret)
 
     return secret
@@ -352,20 +323,20 @@ def CurrentOutputs():
     for output in cf_response["Stacks"][0]["Outputs"]:
         if "SubscriptionId" in str(output): 
             cf_sub_id = output["OutputValue"]
-        else:
-            print ("Subscription ID is not displayed in output: " + str(output))
+        # else:
+        #     print ("Subscription ID is not displayed in output: " + str(output))
         if "PostCall" in str(output): 
             cf_event = output["OutputValue"]
-        else:
-            print ("POST API call event is not displayed in output: " + str(output))
+        # else:
+        #     print ("POST API call event is not displayed in output: " + str(output))
         if "DefaultDatabaseId" in str(output): 
             cf_db_id = output["OutputValue"]
-        else:
-            print ("DefaultDatabaseId is not displayed in output: " + str(output))
+        # else:
+        #     print ("DefaultDatabaseId is not displayed in output: " + str(output))
         if "SubscriptionDescription" in str(output): 
             cf_sub_description = output["OutputValue"]
-        else:
-            print ("SubscriptionDescription is not displayed in output: " + str(output))
+        # else:
+        #     print ("SubscriptionDescription is not displayed in output: " + str(output))
             
     print ("cf_sub_id is: " + str(cf_sub_id))
     print ("cf_event is: " + str(cf_event))
@@ -375,28 +346,18 @@ def CurrentOutputs():
     
 #Creating Flexible Subscription also requires creating a new Database within    
 def PostSubscription (event):
-    
-    # The API endpoint
     url = base_url + "/v1/subscriptions/" #will be changed based on new base_url
     
-    # A POST request to the API
     response = requests.post(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key, "Content-Type":content_type}, json = event)
-
-    # add validation logic for response success/not success
-    # Print the response
     response_json = response.json()
     return response_json
     Logs(response_json)
 
 def GetSubscription (subscription_id = ""):
-    # The API endpoint
     # If subscription_id string is empty, GET verb will print all Flexible Subscriptions
     url = base_url + "/v1/subscriptions/" + subscription_id
     
-    # A GET request to the API
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    # add validation logic for response success/not success
-    # Print the response
     response_json = response.json()
     return response_json
     Logs(response_json)
@@ -404,7 +365,6 @@ def GetSubscription (subscription_id = ""):
 def GetSubscriptionStatus (subscription_id):
     url = base_url + "/v1/subscriptions/" + subscription_id
     
-    # A GET request to the API
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response = response.json()
     sub_status = response["status"]
@@ -414,9 +374,11 @@ def GetSubscriptionStatus (subscription_id):
 def GetSubscriptionId (url):
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response = response.json()
-
+    print (str(response))
+    
     while "resourceId" not in str(response):
         time.sleep(1)
+        print (str(response))
         response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
         response = response.json()
 
@@ -437,65 +399,57 @@ def GetSubscriptionError (url):
     return sub_error_description
     
 def GetDatabaseId (subscription_id, offset = 0, limit = 100):
-    # The API endpoint
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/databases?offset=" + str(offset) + "&limit=" + str(limit)
     
-    # A GET request to the API
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response_json = response.json()
-    
     default_db_id = response_json["subscription"][0]["databases"][0]["databaseId"]
-
     return default_db_id
     Logs(response_json)
     
 def GetAllDatabases (subscription_id, offset = 0, limit = 100):
-    # The API endpoint
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/databases?offset=" + str(offset) + "&limit=" + str(limit)
     
-    # A GET request to the API
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    
-    # Print the response
     response_json = response.json()
     return response_json
     Logs(response_json)
     
 def PutSubscription (subscription_id, event):
-    # The API endpoint
     url = base_url + "/v1/subscriptions/" + subscription_id
     print (event)
     
-    # A PUT request to the API
-    response = requests.put(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key, "Content-Type":content_type}, json = event)
+    update_dict = {}
+    for key in list(event):
+    	if key == "name":
+    	    update_dict['name'] = event[key]
+    	elif key == "paymentMethodId":
+    	    update_dict['paymentMethodId'] = event[key]
     
-    # Print the response
+    response = requests.put(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key, "Content-Type":content_type}, json = update_dict)
+    print ("PutSubscription response is:")
+    print(response)
     response_json = response.json()
     return response_json
     Logs(response_json)
 
-#Deleting Subscription required deleting the Database underneath it first    
+#Deleting Subscription requires deleting the Database underneath it first    
 def DeleteSubscription (subscription_id, database_id):
-    # The API endpoint
     db_url   = base_url + "/v1/subscriptions/" + subscription_id + "/databases/" + database_id
     subs_url = base_url + "/v1/subscriptions/" + subscription_id
     
-    # A DELETE request to the API
     response_db   = requests.delete(db_url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response_subs = requests.delete(subs_url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    
-    # Print the response
     Logs(response_db.json())
     Logs(response_subs.json())
     
-#todo    
 def GetResponse(responseURL, responseBody): 
     responseBody = json.dumps(responseBody)
     req = requests.put(responseURL, data = responseBody)
     print ('RESPONSE BODY:n' + responseBody)
 
 def Logs(response_json):
-    error_url = response_json['links'][0]['href'] #add try except for error handling
+    error_url = response_json['links'][0]['href']
     error_message = requests.get(error_url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     error_message_json = error_message.json()
     if 'description' in error_message_json:
