@@ -26,6 +26,7 @@ phases:
       - aws s3 cp FlexibleSubscription-Handler.zip s3://redis-cicd/v.1.1/
       # Create a zip archive for layers and upload archives to S3
       - cd Layers
+      - sleep 2
       - ls
       - zip -r requests_layer.zip requests_layer
       - zip -r secrets_layer.zip secrets_layer
