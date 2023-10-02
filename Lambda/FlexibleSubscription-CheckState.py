@@ -19,7 +19,6 @@ def lambda_handler(event, context):
     subscription_id = event["responseBody"]["Data"]["SubscriptionId"]
     sub_status = GetSubscriptionStatus(subscription_id)
     
-    print (sub_status)
     event["sub_status"] = sub_status
     return event
     
@@ -38,9 +37,7 @@ def RetrieveSecret(secret_name):
 
     secrets_extension_endpoint = "http://localhost:2773/secretsmanager/get?secretId=" + str(secret_name)
     r = requests.get(secrets_extension_endpoint, headers=headers)
-    print (r)
     secret = json.loads(r.text)["SecretString"] # load the Secrets Manager response into a Python dictionary, access the secret
     secret = json.loads(secret)
 
     return secret
-
