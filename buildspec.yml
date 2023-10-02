@@ -25,6 +25,8 @@ phases:
       # Create a zip archive for layers and upload archives to S3
       - cd Layers && zip -r requests_layer.zip requests_layer
       - cd Layers && zip -r secrets_layer.zip secrets_layer
+      - ls
+      - ls Layers
       - aws s3 cp requests_layer.zip s3://redis-cicd/v.1.1/
       - aws s3 cp secrets_layer.zip s3://redis-cicd/v.1.1/
       - aws s3 cp requests_layer.zip s3://redis-cicd/latest/
