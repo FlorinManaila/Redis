@@ -14,14 +14,11 @@ phases:
       # Clone the GitHub repository
       - git clone https://github.com/FlorinManaila/Redis.git
       - cd Redis
-      - git log
-      - git log -1 --pretty=format:%s
       # Extract the version number from the commit message
       - |
         commit_msg=$(git log -1 --pretty=format:%s)
         version_number=$(echo "$commit_msg" | grep -oP 'v\d+\.\d+\.\d+')
         export VERSION_NUMBER=$version_number
-
       # Upload CF template to S3
       - aws s3 cp CloudFormation/RedisCloudFormationTemplate.yml s3://redis-cicd/$VERSION_NUMBER/
       - aws s3 cp CloudFormation/RedisCloudFormationTemplate.yml s3://redis-cicd/latest/
