@@ -388,10 +388,12 @@ def GetSubscriptionId (url):
 
 def GetSubscriptionError (url):
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    response = response.json()
+    response = response.json(
+    count = 0
 
-    while "processing-error" not in str(response):
+    while "processing-error" not in str(response) and count < 30:
         time.sleep(1)
+        count += 1
         response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
         response = response.json()
 
