@@ -20,8 +20,8 @@ phases:
         version_number=$(echo "$commit_msg" | grep -oP 'v\d+\.\d+\.\d+')
         export VERSION_NUMBER=$version_number
       # Upload CF template to S3
-      - aws s3 cp CloudFormation/RedisCloudFormationTemplate.yml s3://redis-cicd/$VERSION_NUMBER/
-      - aws s3 cp CloudFormation/RedisCloudFormationTemplate.yml s3://redis-cicd/latest/
+      - aws s3 cp CloudFormation/FlexibleSubscriptionCFTemplate.yml s3://redis-cicd/$VERSION_NUMBER/
+      - aws s3 cp CloudFormation/FlexibleSubscriptionCFTemplate.yml s3://redis-cicd/latest/
       # Create a zip archive for lambdas and upload archives to S3
       - zip -j FlexibleSubscription-CheckState.zip Lambda/FlexibleSubscription-CheckState.py
       - zip -j FlexibleSubscription-CFResponse.zip Lambda/FlexibleSubscription-CFResponse.py
