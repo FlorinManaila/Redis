@@ -417,7 +417,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: 
-        Fn::Sub: RedisLambdaExecutionRole-${AWS::Region}-${AWS::StackName}
+        Fn::Sub: FlexibleSubscriptionLambdaExecutionRole-${AWS::Region}-${AWS::StackName}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -429,7 +429,7 @@ Resources:
           - sts:AssumeRole
       Path: "/"
       Policies:
-      - PolicyName: RedisLambdaExecutionRole
+      - PolicyName: FlexibleSubscriptionLambdaExecutionRole
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
