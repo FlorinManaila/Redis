@@ -93,7 +93,6 @@ Parameters:
      Type: String
      AllowedValues:
        - AWS
-       - GCP
      Description: "[Optional]. Cloud provider. Example: AWS. Default: 'AWS'"
      Default: AWS
     cloudAccountId:
@@ -378,7 +377,8 @@ Resources:
         S3Key:
           Fn::Join:
             - ""
-            - - !Ref version
+            - - "Flexible-Subscription/"
+              - !Ref version
               - "/requests_layer.zip"
       CompatibleRuntimes:
         - python3.7
@@ -400,7 +400,8 @@ Resources:
         S3Key:
           Fn::Join:
             - ""
-            - - !Ref version
+            - - "Flexible-Subscription/"
+              - !Ref version
               - "/secrets_layer.zip"
       CompatibleRuntimes:
         - python3.7
@@ -487,7 +488,8 @@ Resources:
         S3Key:
           Fn::Join:
             - ""
-            - - !Ref version
+            - - "Flexible-Subscription/"
+              - !Ref version
               - "/FlexibleSubscription-Handler.zip"
 
   FlexibleSubscriptionCheckState:
@@ -510,7 +512,8 @@ Resources:
         S3Key:
           Fn::Join:
             - ""
-            - - !Ref version
+            - - "Flexible-Subscription/"
+              - !Ref version
               - "/FlexibleSubscription-CheckState.zip"
 
   FlexibleSubscriptionCFResponse:
@@ -533,7 +536,8 @@ Resources:
         S3Key:
           Fn::Join:
             - ""
-            - - !Ref version
+            - - "Flexible-Subscription/"
+              - !Ref version
               - "/FlexibleSubscription-CFResponse.zip"
 
   Redis:
