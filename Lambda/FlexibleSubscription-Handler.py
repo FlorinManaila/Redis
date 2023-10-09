@@ -137,7 +137,6 @@ def lambda_handler (event, context):
                     }
     
     if event['RequestType'] == "Create":
-        # try:
         responseValue = PostSubscription(callEvent)
         print (responseValue) 
         
@@ -172,17 +171,6 @@ def lambda_handler (event, context):
                 else:
                     responseBody["Reason"] = reason
                 GetResponse(responseURL, responseBody)
-                    
-        # except:
-        #     responseStatus = 'FAILED'
-        #     reason = "Wrong Base URL"
-        #     if responseStatus == 'FAILED':
-        #         responseBody.update({"Status":responseStatus})
-        #         if "Reason" in str(responseBody):
-        #             responseBody.update({"Reason":reason})
-        #         else:
-        #             responseBody["Reason"] = reason
-        #         GetResponse(responseURL, responseBody)
 
     if event['RequestType'] == "Update":
         cf_sub_id, cf_event, cf_db_id, cf_sub_description = CurrentOutputs()
@@ -323,20 +311,15 @@ def CurrentOutputs():
     for output in cf_response["Stacks"][0]["Outputs"]:
         if "SubscriptionId" in str(output): 
             cf_sub_id = output["OutputValue"]
-        # else:
-        #     print ("Subscription ID is not displayed in output: " + str(output))
+
         if "PostCall" in str(output): 
             cf_event = output["OutputValue"]
-        # else:
-        #     print ("POST API call event is not displayed in output: " + str(output))
+
         if "DefaultDatabaseId" in str(output): 
             cf_db_id = output["OutputValue"]
-        # else:
-        #     print ("DefaultDatabaseId is not displayed in output: " + str(output))
+
         if "SubscriptionDescription" in str(output): 
             cf_sub_description = output["OutputValue"]
-        # else:
-        #     print ("SubscriptionDescription is not displayed in output: " + str(output))
             
     print ("cf_sub_id is: " + str(cf_sub_id))
     print ("cf_event is: " + str(cf_event))
