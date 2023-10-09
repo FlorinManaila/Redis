@@ -137,45 +137,34 @@ def lambda_handler (event, context):
                     }
     
     if event['RequestType'] == "Create":
-        try:
-            responseValue = PostSubscription(callEvent)
-            print (responseValue) 
-            
-            try:        
-                sub_id, sub_description = GetSubscriptionId (responseValue['links'][0]['href'])
-                default_db_id = GetDatabaseId(sub_id)
-                print ("New sub id is: " + str(sub_id))
-                print ("Description for Subscription with id " + str(sub_id) + " is: " + str(sub_description))
-                        
-                responseData.update({"SubscriptionId":str(sub_id), "DefaultDatabaseId":str(default_db_id), "SubscriptionDescription":str(sub_description), "PostCall":str(callEvent)})
-                responseBody.update({"Data":responseData})
-                SFinput = {}
-                SFinput["responseBody"] = responseBody
-                SFinput["responseURL"] = responseURL
-                SFinput["base_url"] = event['ResourceProperties']['baseURL']
-                response = stepfunctions.start_execution(
-                    stateMachineArn = f'arn:aws:states:{runtime_region}:{aws_account_id}:stateMachine:FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
-                    name = f'FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
-                    input = json.dumps(SFinput)
-                    )
-                print ("Output sent to Step Functions is the following:")
-                print (json.dumps(SFinput))
-                            
-            except:
-                sub_error = GetSubscriptionError (responseValue['links'][0]['href'])
-                responseStatus = 'FAILED'
-                reason = str(sub_error)
-                if responseStatus == 'FAILED':
-                    responseBody.update({"Status":responseStatus})
-                    if "Reason" in str(responseBody):
-                        responseBody.update({"Reason":reason})
-                    else:
-                        responseBody["Reason"] = reason
-                    GetResponse(responseURL, responseBody)
+        # try:
+        responseValue = PostSubscription(callEvent)
+        print (responseValue) 
+        
+        try:        
+            sub_id, sub_description = GetSubscriptionId (responseValue['links'][0]['href'])
+            default_db_id = GetDatabaseId(sub_id)
+            print ("New sub id is: " + str(sub_id))
+            print ("Description for Subscription with id " + str(sub_id) + " is: " + str(sub_description))
                     
+            responseData.update({"SubscriptionId":str(sub_id), "DefaultDatabaseId":str(default_db_id), "SubscriptionDescription":str(sub_description), "PostCall":str(callEvent)})
+            responseBody.update({"Data":responseData})
+            SFinput = {}
+            SFinput["responseBody"] = responseBody
+            SFinput["responseURL"] = responseURL
+            SFinput["base_url"] = event['ResourceProperties']['baseURL']
+            response = stepfunctions.start_execution(
+                stateMachineArn = f'arn:aws:states:{runtime_region}:{aws_account_id}:stateMachine:FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
+                name = f'FlexibleSubscription-StateMachine-{runtime_region}-{stack_name}',
+                input = json.dumps(SFinput)
+                )
+            print ("Output sent to Step Functions is the following:")
+            print (json.dumps(SFinput))
+                        
         except:
+            sub_error = GetSubscriptionError (responseValue['links'][0]['href'])
             responseStatus = 'FAILED'
-            reason = "Wrong Base URL"
+            reason = str(sub_error)
             if responseStatus == 'FAILED':
                 responseBody.update({"Status":responseStatus})
                 if "Reason" in str(responseBody):
@@ -183,6 +172,17 @@ def lambda_handler (event, context):
                 else:
                     responseBody["Reason"] = reason
                 GetResponse(responseURL, responseBody)
+                    
+        # except:
+        #     responseStatus = 'FAILED'
+        #     reason = "Wrong Base URL"
+        #     if responseStatus == 'FAILED':
+        #         responseBody.update({"Status":responseStatus})
+        #         if "Reason" in str(responseBody):
+        #             responseBody.update({"Reason":reason})
+        #         else:
+        #             responseBody["Reason"] = reason
+        #         GetResponse(responseURL, responseBody)
 
     if event['RequestType'] == "Update":
         cf_sub_id, cf_event, cf_db_id, cf_sub_description = CurrentOutputs()
