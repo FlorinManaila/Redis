@@ -107,7 +107,7 @@ def lambda_handler (event, context):
         callEvent["paymentMethod"] = event['ResourceProperties']["paymentMethod"]
     if "paymentMethodId" in event['ResourceProperties']:
         callEvent["paymentMethodId"] = int(event['ResourceProperties']["paymentMethodId"])
-    if "paymentMethodId" in event['ResourceProperties']:
+    if "memoryStorage" in event['ResourceProperties']:
         callEvent["memoryStorage"] = event['ResourceProperties']["memoryStorage"]
     callEvent["cloudProviders"] = cloudProvidersList
     callEvent["databases"] = databasesList
