@@ -179,6 +179,9 @@ Parameters:
     averageItemSizeInBytes:
       Type: String
       Description: "[Optional]. Relevant only to ram-and-flash clusters. Estimated average size (measured in bytes) of the items stored in the database. Default: 1000"
+    respVersion:
+      Type: String
+      Description: "[Optional]. RESP version must be compatible with Redis version. Example: resp3. Allowed values: resp2/resp3."
     redisVersion:
       Type: String
       AllowedValues: 
@@ -235,7 +238,8 @@ Metadata:
          - moduleName
          - parameters
          - quantity
-         - averageItemSizeInBytes     
+         - averageItemSizeInBytes 
+         - respVersion    
 
 Conditions:
   subNameCondition:                    !Not [!Equals [!Ref subName, ""]]
@@ -258,6 +262,7 @@ Conditions:
   parametersCondition:                 !Not [!Equals [!Ref parameters, ""]]
   quantityCondition:                   !Not [!Equals [!Ref quantity, ""]]
   averageItemSizeInBytesCondition:     !Not [!Equals [!Ref averageItemSizeInBytes, ""]]
+  respVersionCondition:                !Not [!Equals [!Ref respVersion, ""]]
   redisVersionCondition:               !Not [!Equals [!Ref redisVersion, ""]]
 
 Resources:
@@ -572,7 +577,9 @@ Resources:
         parameters:                 !If [parametersCondition, !Ref parameters, !Ref "AWS::NoValue"]
         quantity:                   !If [quantityCondition, !Ref quantity, !Ref "AWS::NoValue"]
         averageItemSizeInBytes:     !If [averageItemSizeInBytesCondition, !Ref averageItemSizeInBytes, !Ref "AWS::NoValue"]
+        averageItemSizeInBytes:     !If [respVersionCondition, !Ref respVersion, !Ref "AWS::NoValue"]
         redisVersion:               !If [redisVersionCondition, !Ref redisVersion, !Ref "AWS::NoValue"]
+        
 Outputs:
   SubscriptionId:
     Description: Subscription ID for the current stack
