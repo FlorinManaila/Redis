@@ -12,7 +12,7 @@ runtime_region = os.environ['AWS_REGION']
 stepfunctions = boto3.client("stepfunctions")
 
 def lambda_handler (event, context):
-    
+
     print (event)
     aws_account_id = context.invoked_function_arn.split(":")[4]
     
@@ -94,6 +94,8 @@ def lambda_handler (event, context):
         databasesDict["quantity"] = int(event['ResourceProperties']["quantity"])
     if "averageItemSizeInBytes" in event['ResourceProperties']:
         databasesDict["averageItemSizeInBytes"] = int(event['ResourceProperties']["averageItemSizeInBytes"])
+    if "respVersion" in event['ResourceProperties']:
+        databasesDict["respVersion"] = event['ResourceProperties']["respVersion"]
     databasesList.append(databasesDict)
     
     callEvent = {}
