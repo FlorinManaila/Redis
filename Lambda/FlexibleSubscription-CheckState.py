@@ -9,6 +9,7 @@ from os import environ
 accept = "application/json"
 
 def lambda_handler(event, context):
+    #Prints the event retrieved from the Handler function through Step Functions
     print (json.dumps(event))
     global base_url
     global x_api_key
@@ -16,9 +17,12 @@ def lambda_handler(event, context):
     base_url = event["base_url"]
     x_api_key =  RetrieveSecret("redis/x_api_key")["x_api_key"]
     x_api_secret_key =  RetrieveSecret("redis/x_api_secret_key")["x_api_secret_key"]
+    #Calls the GetStatus function in a loop created by the state machine until the status is 'active'
     subscription_id = event["responseBody"]["Data"]["SubscriptionId"]
     sub_status = GetSubscriptionStatus(subscription_id)
     
+    #return the event which is a status to Step Functions to use it further to call the CFResponse lambda
+    print (sub_status)
     event["sub_status"] = sub_status
     return event
     
@@ -37,6 +41,7 @@ def RetrieveSecret(secret_name):
 
     secrets_extension_endpoint = "http://localhost:2773/secretsmanager/get?secretId=" + str(secret_name)
     r = requests.get(secrets_extension_endpoint, headers=headers)
+    print (r)
     secret = json.loads(r.text)["SecretString"] # load the Secrets Manager response into a Python dictionary, access the secret
     secret = json.loads(secret)
 
