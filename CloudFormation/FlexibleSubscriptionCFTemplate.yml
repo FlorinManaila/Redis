@@ -577,7 +577,6 @@ Resources:
         parameters:                 !If [parametersCondition, !Ref parameters, !Ref "AWS::NoValue"]
         quantity:                   !If [quantityCondition, !Ref quantity, !Ref "AWS::NoValue"]
         averageItemSizeInBytes:     !If [averageItemSizeInBytesCondition, !Ref averageItemSizeInBytes, !Ref "AWS::NoValue"]
-        averageItemSizeInBytes:     !If [respVersionCondition, !Ref respVersion, !Ref "AWS::NoValue"]
         redisVersion:               !If [redisVersionCondition, !Ref redisVersion, !Ref "AWS::NoValue"]
         
 Outputs:
